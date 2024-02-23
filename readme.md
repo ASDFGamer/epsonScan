@@ -15,7 +15,6 @@ The following environment variables can be used to configure the package:
 
 - SCANNER_IP: (REQUIRED) The IPv4 IP of the Scanner.
 - DPI: The DPI used when scanning Documents. The default is '300'.
-- FILE_PREFIX: The prefix of the scanned documents. The default is 'scan'.
 
 ## Volumes
 
@@ -25,3 +24,6 @@ The scanned documents are stored in the folder /scans. This should be mapped to 
 
 The Server uses the port 8080
 
+The following endpoints are provided:
+ - /scan : This can be used to scan files. The endpoint returns the filename of the scanned file once the scanning is complete. This can take some time. It returns 500 when a error occures.
+ - /files/{filename} : This endpoint can be used to retrieve files that were scanned.   
