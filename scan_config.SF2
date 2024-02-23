@@ -79,7 +79,7 @@
                         "int": 0
                     },
                     "FileNamePrefix": {
-                        "string": "scan"
+                        "string": "PREFIX"
                     },
                     "FixedDocumentSize": {
                         "int": 3
@@ -151,7 +151,7 @@
                         "int": 0
                     },
                     "Resolution": {
-                        "int": 300
+                        "int": DPI
                     },
                     "ScanAreaHeight": {
                         "int": 4677
@@ -172,7 +172,7 @@
                         "int": 1
                     },
                     "UserDefinePath": {
-                        "string": "/home/christoph/tmp/scan"
+                        "string": "RESULT_FOLDER"
                     },
                     "UserScanAreaHeight": {
                         "int": 0
