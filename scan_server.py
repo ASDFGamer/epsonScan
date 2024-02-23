@@ -14,7 +14,7 @@ import sys
 from typing import Any, NoReturn, Optional
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-SCAN_DIR = os.path.join(SCRIPT_DIR, "files")
+SCAN_DIR = os.path.join(SCRIPT_DIR, "scans")
 
 
 def fatal_error(message: str, exit_code: int = 1) -> NoReturn:

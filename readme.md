@@ -18,7 +18,7 @@ The following environment variables can be used to configure the package:
 
 ## Volumes
 
-The scanned documents are stored in the folder /scans. This should be mapped to a volume to retrieve the documents. 
+The scanned documents are stored in the folder /docker/scans. This should be mapped to a volume to retrieve the documents. 
 
 # Usage
 
