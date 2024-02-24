@@ -13,6 +13,8 @@ import subprocess
 import sys
 from typing import Any, NoReturn, Optional
 
+print(f"Run {__name__}")
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 SCAN_DIR = os.path.join(SCRIPT_DIR, "scans")
 
@@ -57,7 +59,7 @@ def update_config() -> None:
 
 
 def update_config_file(replace_values: dict[str, str]) -> None:
-    config_file_path = "./scan_config.SF2"
+    config_file_path = os.path.join(SCRIPT_DIR, "./scan_config.SF2")
     with open(config_file_path, encoding="UTF-8") as f:
         new_config = f.read()
 
@@ -66,9 +68,6 @@ def update_config_file(replace_values: dict[str, str]) -> None:
         new_config = new_config.replace(key, value)
 
     with open(config_file_path, "w", encoding="UTF-8") as f:
-        f.write(new_config)
-
-    with open(config_file_path + ".bak", "w", encoding="UTF-8") as f:
         f.write(new_config)
 
 
@@ -88,7 +87,7 @@ class ScanHTTPRequestHandler(BaseHTTPRequestHandler):
         return
 
     def do_scan(self):
-        scanner_ip = get_env_var("SCANNER_IP")
+        scanner_ip = get_env_var("SCANNER_IP", required=True)
         prefix = self._generate_prefix()
         update_config_file({"PREFIX": prefix})
         command = "epsonscan2 --scan {} ./scan_config.SF2".format(scanner_ip)
@@ -101,7 +100,8 @@ class ScanHTTPRequestHandler(BaseHTTPRequestHandler):
                 {
                     "message": "Error while scanning",
                     "returncode": e.returncode,
-                    "output": e.output,
+                    "stdout": e.stdout,
+                    "ssterr": e.stderr,
                     "command": e.cmd,
                 }
             )
@@ -153,12 +153,13 @@ def run_server(
     handler_class: type[BaseHTTPRequestHandler] = SimpleHTTPRequestHandler,
 ):
     """Entrypoint for python server"""
-    httpd = ThreadingHTTPServer(("0.0.0.0", 8080), handler_class)
+    httpd = ThreadingHTTPServer(("", 8080), handler_class)
     print("Launching server")
     httpd.serve_forever()
 
 
 def main():
+    print("Start")
     update_config()
     run_server(ScanHTTPRequestHandler)
 

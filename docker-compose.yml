@@ -1,0 +1,17 @@
+services:
+    epson_scan:
+        container_name: epson_scan
+        environment:
+            TZ: Europe/Berlin
+            SCANNER_IP: 192.168.2.72
+            DPI: 300
+        build: .
+        mem_limit: 4096m
+        restart: unless-stopped
+        ports:
+            - 8080:8080
+        volumes:
+            - scans:/docker/scans:rw
+
+volumes:
+    scans:
