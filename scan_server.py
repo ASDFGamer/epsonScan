@@ -44,34 +44,17 @@ def get_env_var(
         return default
 
 
-def update_config() -> None:
-    replace_values: dict[str, str] = {}
-
-    replace_values["DPI"] = get_env_var("DPI", default="300")
-
-    if os.path.isfile(SCAN_DIR):
-        fatal_error("{} has to be a dir and not a file".format(SCAN_DIR))
-    if not os.path.isdir(SCAN_DIR):
-        os.mkdir(SCAN_DIR)
-
-    replace_values["RESULT_FOLDER"] = SCAN_DIR
-    update_config_file(replace_values)
-
-
-def update_config_file(replace_values: dict[str, str]) -> None:
-    config_file_path = os.path.join(SCRIPT_DIR, "./scan_config.SF2")
-    with open(config_file_path, encoding="UTF-8") as f:
-        new_config = f.read()
-
-    for key, value in replace_values.items():
-        print(f"Replace {key} with {value}")
-        new_config = new_config.replace(key, value)
-
-    with open(config_file_path, "w", encoding="UTF-8") as f:
-        f.write(new_config)
-
-
 class ScanHTTPRequestHandler(BaseHTTPRequestHandler):
+
+    valid_formats = ["pnm", "tiff", "png", "jpeg", "pdf"]
+
+    mime_types = {
+        "pnm": "image/x-portable-anymap",
+        "tiff": "image/tiff",
+        "png": "image/png",
+        "jpeg": "image/jpeg",
+        "pdf": "application/pdf",
+    }
 
     def do_GET(self):
 
@@ -89,8 +72,16 @@ class ScanHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_scan(self):
         scanner_ip = get_env_var("SCANNER_IP", required=True)
         prefix = self._generate_prefix()
-        update_config_file({"PREFIX": prefix})
-        command = "epsonscan2 --scan {} ./scan_config.SF2".format(scanner_ip)
+        device = f"epsonds:net:{scanner_ip}"
+        file_format = get_env_var("FILE_FORMAT", default="pdf").lower()
+        if file_format not in self.valid_formats:
+            valid_formats_str = ",".join(self.valid_formats)
+            fatal_error(
+                f"Format {file_format} is invalid. Valid formats are: {valid_formats_str}"
+            )
+        output_file = self._generate_prefix() + "." + file_format
+        dpi = get_env_var("DPI", default="300")
+        command = f"scanimage --device {device} --format={file_format} --output-file {output_file} --progress --resolution {dpi}"
         try:
             subprocess.run(command.split(), check=True)
         except subprocess.CalledProcessError as e:
@@ -101,32 +92,27 @@ class ScanHTTPRequestHandler(BaseHTTPRequestHandler):
                     "message": "Error while scanning",
                     "returncode": e.returncode,
                     "stdout": e.stdout,
-                    "ssterr": e.stderr,
+                    "stderr": e.stderr,
                     "command": e.cmd,
                 }
             )
         else:
             self.send_response(200)
             self.end_headers()
-            files = [
-                filename
-                for filename in os.listdir(SCAN_DIR)
-                if filename.startswith(prefix)
-            ]
+
             print(f"Prefix: {prefix}")
-            self._write_json({"filename": files[0]})
-        finally:
-            update_config_file({prefix: "PREFIX"})
+            self._write_json({"filename": output_file})
 
     def get_file(self):
-
         filename = self.path.split("/")[-1]
         if not filename.isalnum():
             self.send_response(404)
             self.end_headers()
             self._write_json({"message": "Invalid Filename"})
         self.send_response(200)
-        self.send_header("Content-type", "application/pdf")
+        file_format = get_env_var("FILE_FORMAT", default="pdf").lower()
+        mime_type = self.mime_types[file_format]
+        self.send_header("Content-type", mime_type)
         self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.end_headers()
         with open(os.path.join(SCAN_DIR, filename), "rb") as file:
@@ -160,7 +146,6 @@ def run_server(
 
 def main():
     print("Start")
-    update_config()
     run_server(ScanHTTPRequestHandler)
 
 
